@@ -172,27 +172,26 @@
         <div class="small-box bg-yellow">
           <div class="inner">
             <h3>
-  <?php
-    $qTampil = mysqli_query($connect, "
-      SELECT id FROM surat_keterangan WHERE status_surat='selesai'
-      UNION ALL
-      SELECT id FROM surat_keterangan_berkelakuan_baik WHERE status_surat='selesai'
-      UNION ALL
-      SELECT id FROM surat_keterangan_domisili WHERE status_surat='selesai'
-      UNION ALL
-      SELECT id FROM surat_keterangan_usaha WHERE status_surat='selesai'
-    ");
+              <?php
+                $qTampil = mysqli_query($connect, "
+                  SELECT id FROM surat_keterangan WHERE status_surat='selesai'
+                  UNION ALL
+                  SELECT id FROM surat_keterangan_berkelakuan_baik WHERE status_surat='selesai'
+                  UNION ALL
+                  SELECT id FROM surat_keterangan_domisili WHERE status_surat='selesai'
+                  UNION ALL
+                  SELECT id FROM surat_keterangan_usaha WHERE status_surat='selesai'
+                ");
 
-    if ($qTampil === false) {
-      echo "0";
-      // Debug kalau perlu:
-      // echo mysqli_error($connect);
-    } else {
-      echo mysqli_num_rows($qTampil);
-    }
-  ?>
-</h3>
-
+                if ($qTampil === false) {
+                  echo "0";
+                  // Debug kalau perlu:
+                  // echo mysqli_error($connect);
+                } else {
+                  echo mysqli_num_rows($qTampil);
+                }
+              ?>
+            </h3>
             <p>Laporan Surat Administrasi Desa - Surat Keluar</p>
           </div>
           <div class="icon">
@@ -221,7 +220,7 @@
        				<form class="form-horizontal" method="post" action="simpan-penduduk.php">
        					<div class="col-md-12">
                   <div class="col-md-4" style="text-align: center;">
-                    <img style="max-width:300px; width:100%; height:auto;" src="../../assets/img/logo_banjarnegara.png"><br>
+                    <img style="max-width:200px; width: 130px; height:auto;" src="../../assets/img/logo_banjarnegara.png"><br>
                     <?php  
                       $qTampilDesa = mysqli_query($connect, "SELECT * FROM profil_desa WHERE id_profil_desa = '1'");
                       foreach($qTampilDesa as $row){

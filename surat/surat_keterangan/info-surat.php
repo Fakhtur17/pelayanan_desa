@@ -26,7 +26,7 @@
 						</div>
 					</div>
 					<hr>
-					<form method="post" action="simpan-surat.php">
+					<form method="post" action="simpan-surat.php" enctype="multipart/form-data">
 						<h6 class="container-fluid" align="right"><i class="fas fa-user"></i> Informasi Pribadi</h6><hr width="97%">
 						<div class="row">
 							<div class="col-sm-6">
@@ -128,6 +128,28 @@
 						        </div>
 						  	</div>
 						</div>
+						<div class="row">
+							<div class="col-sm-6">
+								<div class="form-group">
+								<label class="col-sm-12" style="font-weight: 500;">Upload KTP (JPG/PNG/PDF)</label>
+								<div class="col-sm-12">
+									<input type="file" name="file_ktp" class="form-control" accept=".jpg,.jpeg,.png,.pdf" required>
+									<small class="text-muted">Maks 2MB</small>
+								</div>
+								</div>
+							</div>
+
+							<div class="col-sm-6">
+								<div class="form-group">
+								<label class="col-sm-12" style="font-weight: 500;">Upload KK (JPG/PNG/PDF)</label>
+								<div class="col-sm-12">
+									<input type="file" name="file_kk" class="form-control" accept=".jpg,.jpeg,.png,.pdf" required>
+									<small class="text-muted">Maks 2MB</small>
+								</div>
+								</div>
+							</div>
+						</div>
+
 						<hr width="97%">
 						<div class="container-fluid">
 		                	<input type="reset" class="btn btn-warning" value="Batal">

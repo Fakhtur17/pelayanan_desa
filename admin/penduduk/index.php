@@ -96,81 +96,114 @@
           }
         ?>
         <br><br>
-        <table class="table table-striped table-bordered table-responsive" id="data-table" width="100%" cellspacing="0">
-          <thead>
-            <tr>
-              <th><strong>No</strong></th>
-              <th><strong>NIK</strong></th>
-              <th><strong>Nama</strong></th>
-              <th><strong>Tempat/Tgl Lahir</strong></th>
-              <th><strong>Jenis Kelamin</strong></th>
-              <th><strong>Agama</strong></th>
-              <th><strong>Alamat</strong></th>
-              <?php 
-                if(isset($_SESSION['lvl']) && ($_SESSION['lvl'] == 'Administrator')){
-              ?>
-              <th><strong>Aksi</strong></th>
-              <?php  
-                } else {
+        <div class="table-responsive">
+<table class="table table-striped table-bordered" id="data-table" width="100%" cellspacing="0" style="white-space:nowrap;">
+  <thead>
+    <tr>
+      <th class="text-center"><strong>No</strong></th>
+      <th><strong>NIK</strong></th>
+      <th><strong>No KK</strong></th>
+      <th><strong>Nama</strong></th>
+      <th><strong>Tempat/Tgl Lahir</strong></th>
+      <th><strong>Jenis Kelamin</strong></th>
+      <th><strong>Agama</strong></th>
+      <th><strong>Jalan</strong></th>
+      <th><strong>Dusun</strong></th>
+      <th><strong>RT</strong></th>
+      <th><strong>RW</strong></th>
+      <th><strong>Desa</strong></th>
+      <th><strong>Kecamatan</strong></th>
+      <th><strong>Kota</strong></th>
+      <th><strong>Pendidikan di KK</strong></th>
+      <th><strong>Pendidikan Terakhir</strong></th>
+      <th><strong>Pendidikan Ditempuh</strong></th>
+      <th><strong>Pekerjaan</strong></th>
+      <th><strong>Status Perkawinan</strong></th>
+      <th><strong>Status Dlm Keluarga</strong></th>
+      <th><strong>Kewarganegaraan</strong></th>
+      <th><strong>Nama Ayah</strong></th>
+      <th><strong>Nama Ibu</strong></th>
 
-                }
-              ?>
-            </tr>
-          </thead>
-          <tbody>
-            <?php
-              include ('../../config/koneksi.php');
+      <?php if(isset($_SESSION['lvl']) && ($_SESSION['lvl'] == 'Administrator')){ ?>
+        <th class="text-center"><strong>Aksi</strong></th>
+      <?php } ?>
+    </tr>
+  </thead>
 
-              $no = 1;
-              $qTampil = mysqli_query($connect, "SELECT * FROM penduduk");
-              foreach($qTampil as $row){
-                $tanggal = $row['tgl_lahir'];
-            ?>
-            <tr>
-              <td><?php echo $no++; ?></td>
-              <td><?php echo $row['nik']; ?></td>
-              <td style="text-transform: capitalize;"><?php echo $row['nama']; ?></td>
-              <?php
-                $tanggal = date('d', strtotime($row['tgl_lahir']));
-                $bulan = date('F', strtotime($row['tgl_lahir']));
-                $tahun = date('Y', strtotime($row['tgl_lahir']));
-                $bulanIndo = array(
-                    'January' => 'Januari',
-                    'February' => 'Februari',
-                    'March' => 'Maret',
-                    'April' => 'April',
-                    'May' => 'Mei',
-                    'June' => 'Juni',
-                    'July' => 'Juli',
-                    'August' => 'Agustus',
-                    'September' => 'September',
-                    'October' => 'Oktober',
-                    'November' => 'November',
-                    'December' => 'Desember'
-                );
-              ?>
-              <td style="text-transform: capitalize;"><?php echo $row['tempat_lahir'] . ", " . $tanggal . " " . $bulanIndo[$bulan] . " " . $tahun; ?></td>
-              <td style="text-transform: capitalize;"><?php echo $row['jenis_kelamin']; ?></td>
-              <td style="text-transform: capitalize;"><?php echo $row['agama']; ?></td>
-              <td style="text-transform: capitalize;"><?php echo 'Dsn. ', $row['dusun'], ', RT', $row['rt'], '/RW', $row['rw']; ?></td>
-              <?php 
-                if(isset($_SESSION['lvl']) && ($_SESSION['lvl'] == 'Administrator')){
-              ?>
-              <td>
-                <a class="btn btn-success btn-sm" href='edit-penduduk.php?id=<?php echo $row['id_penduduk']; ?>'><i class="fa fa-edit"></i></a>
-                <a class="btn btn-danger btn-sm" href='hapus-penduduk.php?id=<?php echo $row['id_penduduk']; ?>' onclick="return confirm('Apakah Anda yakin ingin menghapus data ini?')"><i class="fa fa-trash"></i></a>
-              </td>
-              <?php  
-                } else {
-                  
-                }
-              ?>
-            </tr>
-            <?php
-              }
-            ?>
-          </tbody>
-        </table>
+  <tbody>
+    <?php
+      include ('../../config/koneksi.php');
+
+      $bulanIndo = array(
+          'January' => 'Januari',
+          'February' => 'Februari',
+          'March' => 'Maret',
+          'April' => 'April',
+          'May' => 'Mei',
+          'June' => 'Juni',
+          'July' => 'Juli',
+          'August' => 'Agustus',
+          'September' => 'September',
+          'October' => 'Oktober',
+          'November' => 'November',
+          'December' => 'Desember'
+      );
+
+      $no = 1;
+      $qTampil = mysqli_query($connect, "SELECT * FROM penduduk ORDER BY id_penduduk DESC");
+      foreach($qTampil as $row){
+
+        $tanggal = date('d', strtotime($row['tgl_lahir']));
+        $bulan   = date('F', strtotime($row['tgl_lahir']));
+        $tahun   = date('Y', strtotime($row['tgl_lahir']));
+        $ttl     = $row['tempat_lahir'] . ", " . $tanggal . " " . $bulanIndo[$bulan] . " " . $tahun;
+    ?>
+    <tr>
+      <td class="text-center"><?php echo $no++; ?></td>
+      <td><?php echo $row['nik']; ?></td>
+      <td><?php echo $row['no_kk']; ?></td>
+      <td style="text-transform: capitalize;"><?php echo $row['nama']; ?></td>
+      <td style="text-transform: capitalize;"><?php echo $ttl; ?></td>
+      <td style="text-transform: capitalize;"><?php echo $row['jenis_kelamin']; ?></td>
+      <td style="text-transform: capitalize;"><?php echo $row['agama']; ?></td>
+
+      <td style="text-transform: capitalize;"><?php echo $row['jalan']; ?></td>
+      <td style="text-transform: capitalize;"><?php echo $row['dusun']; ?></td>
+      <td><?php echo $row['rt']; ?></td>
+      <td><?php echo $row['rw']; ?></td>
+      <td style="text-transform: capitalize;"><?php echo $row['desa']; ?></td>
+      <td style="text-transform: capitalize;"><?php echo $row['kecamatan']; ?></td>
+      <td style="text-transform: capitalize;"><?php echo $row['kota']; ?></td>
+
+      <td><?php echo $row['pend_kk']; ?></td>
+      <td><?php echo $row['pend_terakhir']; ?></td>
+      <td><?php echo $row['pend_ditempuh']; ?></td>
+
+      <td style="text-transform: capitalize;"><?php echo $row['pekerjaan']; ?></td>
+      <td><?php echo $row['status_perkawinan']; ?></td>
+      <td><?php echo $row['status_dlm_keluarga']; ?></td>
+      <td><?php echo $row['kewarganegaraan']; ?></td>
+
+      <td style="text-transform: capitalize;"><?php echo $row['nama_ayah']; ?></td>
+      <td style="text-transform: capitalize;"><?php echo $row['nama_ibu']; ?></td>
+
+      <?php if(isset($_SESSION['lvl']) && ($_SESSION['lvl'] == 'Administrator')){ ?>
+        <td class="text-center">
+          <a class="btn btn-success btn-sm" href='edit-penduduk.php?id=<?php echo $row['id_penduduk']; ?>'>
+            <i class="fa fa-edit"></i>
+          </a>
+          <a class="btn btn-danger btn-sm" href='hapus-penduduk.php?id=<?php echo $row['id_penduduk']; ?>'
+             onclick="return confirm('Apakah Anda yakin ingin menghapus data ini?')">
+            <i class="fa fa-trash"></i>
+          </a>
+        </td>
+      <?php } ?>
+    </tr>
+    <?php } ?>
+  </tbody>
+</table>
+</div>
+
       </div>
     </div>
   </section>
