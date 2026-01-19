@@ -1,3 +1,7 @@
+<?php
+// taruh PALING ATAS sebelum HTML
+session_start();
+?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -60,15 +64,15 @@
       background: linear-gradient(rgba(0,0,0,.60), rgba(0,0,0,.45));
     }
     .hero-content {
-  position: relative;
-  z-index: 2;
-  height: 100%;
-  display: flex;
-  align-items: flex-end;   /* bikin konten turun */
-  padding: 42px;
-  padding-bottom: 40px;   /* tambah jarak dari bawah */
-  color: #fff;
-}
+      position: relative;
+      z-index: 2;
+      height: 100%;
+      display: flex;
+      align-items: flex-end;
+      padding: 42px;
+      padding-bottom: 40px;
+      color: #fff;
+    }
 
     .hero-content h1{
       font-weight: 900;
@@ -89,13 +93,8 @@
     }
 
     /* Benefit list */
-    .list-check li{
-      margin-bottom: .55rem;
-    }
-    .list-check i{
-      color:#28a745;
-      margin-right:.55rem;
-    }
+    .list-check li{ margin-bottom: .55rem; }
+    .list-check i{ color:#28a745; margin-right:.55rem; }
 
     /* LANDSCAPE GALLERY */
     .landscape-img {
@@ -121,9 +120,101 @@
       box-shadow: 0 8px 20px rgba(0,0,0,.12);
     }
 
-    .footer{
-      margin-top: 50px;
-      padding: 18px 0;
+    .footer{ margin-top: 50px; padding: 18px 0; }
+
+    /* ============================
+       DRAWER MENU (TITIK TIGA)
+       ============================ */
+
+    /* Mobile: matikan collapse bawaan bootstrap */
+    @media (max-width: 991.98px){
+      #navbarTogglerDemo02{ display:none !important; }
+    }
+
+    .drawer-overlay{
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.55);
+      opacity: 0;
+      pointer-events: none;
+      transition: .25s ease;
+      z-index: 998;
+    }
+    .drawer-overlay.show{
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .mobile-drawer{
+      position: fixed;
+      top: 0;
+      right: -320px;
+      width: 290px;
+      height: 100vh;
+      background: rgba(20,20,30,.95);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-left: 1px solid rgba(255,255,255,.15);
+      box-shadow: -12px 0 35px rgba(0,0,0,.45);
+      padding: 18px;
+      transition: .32s ease;
+      z-index: 999;
+    }
+    .mobile-drawer.show{ right: 0; }
+
+    .drawer-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:16px;
+    }
+
+    .drawer-close{
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.18);
+      color: #fff;
+      font-size: 28px;
+      cursor: pointer;
+      line-height: 0;
+      outline: none;
+    }
+
+    .drawer-menu a{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:12px 14px;
+      border-radius:14px;
+      color:#fff;
+      text-decoration:none;
+      font-weight:700;
+      letter-spacing:.2px;
+      margin-bottom:8px;
+      transition:.2s ease;
+    }
+    .drawer-menu a:hover{
+      background: rgba(255,255,255,.12);
+      color:#fff;
+      text-decoration:none;
+    }
+
+    .drawer-divider{
+      height:1px;
+      background: rgba(255,255,255,.18);
+      margin:14px 0;
+    }
+
+    .drawer-btn{
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.18);
+      justify-content:center;
+    }
+
+    @media (min-width: 992px){
+      .drawer-overlay, .mobile-drawer{ display:none; }
     }
   </style>
 </head>
@@ -137,12 +228,12 @@
       <img src="../assets/img/e-SuratDesa.png" alt="e-SuratDesa">
     </a>
 
-    <button class="navbar-toggler mr-4 mt-3" type="button" data-toggle="collapse"
-            data-target="#navbarTogglerDemo02" aria-controls="navbarTogglerDemo02"
-            aria-expanded="false" aria-label="Toggle navigation">
+    <!-- tombol titik tiga (MOBILE: buka drawer) -->
+    <button class="navbar-toggler mr-4 mt-3" type="button" onclick="openDrawer()" aria-label="Menu">
       <span class="navbar-toggler-icon"></span>
     </button>
 
+    <!-- MENU DESKTOP (tetap normal) -->
     <div class="collapse navbar-collapse" id="navbarTogglerDemo02">
       <ul class="navbar-nav ml-auto mt-lg-3 mr-5 position-relative text-right">
         <li class="nav-item">
@@ -156,7 +247,6 @@
         </li>
         <li class="nav-item active ml-5">
           <?php
-            session_start();
             if (empty($_SESSION['username'])) {
               echo '<a class="btn btn-light text-info" href="../login/"><i class="fas fa-sign-in-alt"></i>&nbsp;LOGIN</a>';
             } else if (isset($_SESSION['lvl'])) {
@@ -169,6 +259,34 @@
     </div>
   </nav>
 </div>
+
+<!-- DRAWER MOBILE -->
+<div id="drawerOverlay" class="drawer-overlay" onclick="closeDrawer()"></div>
+
+<div id="mobileDrawer" class="mobile-drawer">
+  <div class="drawer-header">
+    <img src="../assets/img/e-SuratDesa.png" alt="e-SuratDesa" style="height:26px;">
+    <button class="drawer-close" onclick="closeDrawer()" aria-label="Tutup">&times;</button>
+  </div>
+
+  <div class="drawer-menu">
+    <a href="../"><i class="fas fa-home"></i> Home</a>
+    <a href="../surat/"><i class="fas fa-envelope"></i> Buat Surat</a>
+    <a href="#"><i class="fas fa-info-circle"></i> Tentang</a>
+
+    <div class="drawer-divider"></div>
+
+    <?php
+      if (empty($_SESSION['username'])) {
+        echo '<a class="drawer-btn" href="../login/"><i class="fas fa-sign-in-alt"></i> Login</a>';
+      } else if (isset($_SESSION['lvl'])) {
+        echo '<a class="drawer-btn" href="../admin/"><i class="fa fa-user-cog"></i> '.$_SESSION['lvl'].'</a>';
+        echo '<a class="drawer-btn" href="../login/logout.php"><i class="fas fa-power-off"></i> Logout</a>';
+      }
+    ?>
+  </div>
+</div>
+<!-- /DRAWER -->
 
 <!-- HERO LANDSCAPE -->
 <div class="container mt-4">
@@ -265,8 +383,6 @@
                   <i class="fas fa-user-cog text-info"></i> Manajemen pengguna (Admin/Kades)
                 </div>
               </div>
-
-              
             </div>
           </div>
 
@@ -359,7 +475,22 @@
   </span>
 </div>
 
-<!-- JS agar navbar toggler jalan -->
+<!-- JS DRAWER -->
+<script>
+  function openDrawer(){
+    document.getElementById('mobileDrawer').classList.add('show');
+    document.getElementById('drawerOverlay').classList.add('show');
+  }
+  function closeDrawer(){
+    document.getElementById('mobileDrawer').classList.remove('show');
+    document.getElementById('drawerOverlay').classList.remove('show');
+  }
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape') closeDrawer();
+  });
+</script>
+
+<!-- JS bootstrap (boleh tetap ada untuk komponen lain) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
 <script src="../assets/bootstrap-4.3.1/dist/js/bootstrap.min.js"></script>

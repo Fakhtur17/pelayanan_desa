@@ -1,142 +1,369 @@
+<?php
+include "../../config/koneksi.php";
+
+/* ===== Bulan Indo ===== */
+$bulanIndo = array(
+  'January' => 'Januari',
+  'February' => 'Februari',
+  'March' => 'Maret',
+  'April' => 'April',
+  'May' => 'Mei',
+  'June' => 'Juni',
+  'July' => 'Juli',
+  'August' => 'Agustus',
+  'September' => 'September',
+  'October' => 'Oktober',
+  'November' => 'November',
+  'December' => 'Desember'
+);
+
+/* ===== Builder filter (tanggal/bulan/tahun) ===== */
+function buildWhereFilter($connect, $field){
+  $where = "";
+
+  if (isset($_GET['filter']) && $_GET['filter'] == '2' && !empty($_GET['tanggal'])) {
+    $tgl = mysqli_real_escape_string($connect, $_GET['tanggal']);
+    $where .= " AND DATE($field) = '$tgl' ";
+  }
+
+  if (isset($_GET['filter']) && $_GET['filter'] == '3' && !empty($_GET['bulan']) && !empty($_GET['tahun'])) {
+    $bulan = (int) $_GET['bulan'];
+    $tahun = (int) $_GET['tahun'];
+    $where .= " AND MONTH($field) = $bulan AND YEAR($field) = $tahun ";
+  }
+
+  if (isset($_GET['filter']) && $_GET['filter'] == '4' && !empty($_GET['tahun'])) {
+    $tahun = (int) $_GET['tahun'];
+    $where .= " AND YEAR($field) = $tahun ";
+  }
+
+  return $where;
+}
+
+$whereTanggalSurat = buildWhereFilter($connect, "s.tanggal_surat");
+$whereCreatedAt    = buildWhereFilter($connect, "s.created_at");
+
+/* ===== Judul Cetak ===== */
+$judulTambahan = "";
+if(isset($_GET['filter']) && !empty($_GET['filter'])){
+  $filter = $_GET['filter'];
+
+  if($filter == '2' && !empty($_GET['tanggal'])){
+    $tgl_lhr = $_GET['tanggal'];
+    $tgl = date('d ', strtotime($tgl_lhr));
+    $bln = date('F', strtotime($tgl_lhr));
+    $thn = date(' Y', strtotime($tgl_lhr));
+    $judulTambahan = "(Tanggal ".$tgl.$bulanIndo[$bln].$thn.")";
+  } else if($filter == '3' && !empty($_GET['bulan']) && !empty($_GET['tahun'])){
+    $nama_bulan = array('', 'Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember');
+    $judulTambahan = "(Bulan ".$nama_bulan[(int)$_GET['bulan']]." ".$_GET['tahun'].")";
+  } else if($filter == '4' && !empty($_GET['tahun'])){
+    $judulTambahan = "(Tahun ".$_GET['tahun'].")";
+  }
+}
+
+/* ===== QUERY LENGKAP (sama seperti laporan baru) ===== */
+$query = "
+  SELECT 
+    p.nik, p.no_kk, p.nama, p.tempat_lahir, p.tgl_lahir, p.jenis_kelamin, p.agama,
+    p.jalan, p.dusun, p.rt, p.rw, p.desa, p.kecamatan, p.kota,
+    p.pend_kk, p.pend_terakhir, p.pend_ditempuh, p.pekerjaan,
+    p.status_perkawinan, p.status_dlm_keluarga, p.kewarganegaraan,
+    p.nama_ayah, p.nama_ibu,
+    s.no_surat, s.tanggal_surat AS tanggal_surat, s.jenis_surat
+  FROM penduduk p
+  JOIN surat_keterangan s ON s.nik = p.nik
+  WHERE UPPER(s.status_surat) = 'SELESAI' $whereTanggalSurat
+
+  UNION ALL
+  SELECT 
+    p.nik, p.no_kk, p.nama, p.tempat_lahir, p.tgl_lahir, p.jenis_kelamin, p.agama,
+    p.jalan, p.dusun, p.rt, p.rw, p.desa, p.kecamatan, p.kota,
+    p.pend_kk, p.pend_terakhir, p.pend_ditempuh, p.pekerjaan,
+    p.status_perkawinan, p.status_dlm_keluarga, p.kewarganegaraan,
+    p.nama_ayah, p.nama_ibu,
+    s.no_surat, s.tanggal_surat AS tanggal_surat, s.jenis_surat
+  FROM penduduk p
+  JOIN surat_keterangan_berkelakuan_baik s ON s.nik = p.nik
+  WHERE UPPER(s.status_surat) = 'SELESAI' $whereTanggalSurat
+
+  UNION ALL
+  SELECT 
+    p.nik, p.no_kk, p.nama, p.tempat_lahir, p.tgl_lahir, p.jenis_kelamin, p.agama,
+    p.jalan, p.dusun, p.rt, p.rw, p.desa, p.kecamatan, p.kota,
+    p.pend_kk, p.pend_terakhir, p.pend_ditempuh, p.pekerjaan,
+    p.status_perkawinan, p.status_dlm_keluarga, p.kewarganegaraan,
+    p.nama_ayah, p.nama_ibu,
+    s.no_surat, s.tanggal_surat AS tanggal_surat, s.jenis_surat
+  FROM penduduk p
+  JOIN surat_keterangan_domisili s ON s.nik = p.nik
+  WHERE UPPER(s.status_surat) = 'SELESAI' $whereTanggalSurat
+
+  UNION ALL
+  SELECT 
+    p.nik, p.no_kk, p.nama, p.tempat_lahir, p.tgl_lahir, p.jenis_kelamin, p.agama,
+    p.jalan, p.dusun, p.rt, p.rw, p.desa, p.kecamatan, p.kota,
+    p.pend_kk, p.pend_terakhir, p.pend_ditempuh, p.pekerjaan,
+    p.status_perkawinan, p.status_dlm_keluarga, p.kewarganegaraan,
+    p.nama_ayah, p.nama_ibu,
+    s.no_surat, s.tanggal_surat AS tanggal_surat, s.jenis_surat
+  FROM penduduk p
+  JOIN surat_keterangan_usaha s ON s.nik = p.nik
+  WHERE UPPER(s.status_surat) = 'SELESAI' $whereTanggalSurat
+
+  UNION ALL
+  SELECT 
+    p.nik, p.no_kk, p.nama, p.tempat_lahir, p.tgl_lahir, p.jenis_kelamin, p.agama,
+    p.jalan, p.dusun, p.rt, p.rw, p.desa, p.kecamatan, p.kota,
+    p.pend_kk, p.pend_terakhir, p.pend_ditempuh, p.pekerjaan,
+    p.status_perkawinan, p.status_dlm_keluarga, p.kewarganegaraan,
+    p.nama_ayah, p.nama_ibu,
+    s.no_surat, s.tanggal_surat AS tanggal_surat, s.jenis_surat
+  FROM penduduk p
+  JOIN surat_lapor_hajatan s ON s.nik = p.nik
+  WHERE UPPER(s.status_surat) = 'SELESAI' $whereTanggalSurat
+
+  UNION ALL
+  SELECT 
+    p.nik, p.no_kk, p.nama, p.tempat_lahir, p.tgl_lahir, p.jenis_kelamin, p.agama,
+    p.jalan, p.dusun, p.rt, p.rw, p.desa, p.kecamatan, p.kota,
+    p.pend_kk, p.pend_terakhir, p.pend_ditempuh, p.pekerjaan,
+    p.status_perkawinan, p.status_dlm_keluarga, p.kewarganegaraan,
+    p.nama_ayah, p.nama_ibu,
+    s.no_surat, s.tanggal_surat AS tanggal_surat, s.jenis_surat
+  FROM penduduk p
+  JOIN surat_pengantar_skck s ON s.nik = p.nik
+  WHERE UPPER(s.status_surat) = 'SELESAI' $whereTanggalSurat
+
+  /* ===== TAMBAHAN SURAT ===== */
+
+  UNION ALL
+  SELECT 
+    p.nik, p.no_kk, p.nama, p.tempat_lahir, p.tgl_lahir, p.jenis_kelamin, p.agama,
+    p.jalan, p.dusun, p.rt, p.rw, p.desa, p.kecamatan, p.kota,
+    p.pend_kk, p.pend_terakhir, p.pend_ditempuh, p.pekerjaan,
+    p.status_perkawinan, p.status_dlm_keluarga, p.kewarganegaraan,
+    p.nama_ayah, p.nama_ibu,
+    s.no_surat, s.tanggal_surat AS tanggal_surat, s.jenis_surat
+  FROM penduduk p
+  JOIN surat_cetak_kembali_akta_capil s ON s.nik = p.nik
+  WHERE UPPER(s.status_surat) = 'SELESAI' $whereTanggalSurat
+
+  UNION ALL
+  SELECT 
+    p.nik, p.no_kk, p.nama, p.tempat_lahir, p.tgl_lahir, p.jenis_kelamin, p.agama,
+    p.jalan, p.dusun, p.rt, p.rw, p.desa, p.kecamatan, p.kota,
+    p.pend_kk, p.pend_terakhir, p.pend_ditempuh, p.pekerjaan,
+    p.status_perkawinan, p.status_dlm_keluarga, p.kewarganegaraan,
+    p.nama_ayah, p.nama_ibu,
+    s.no_surat, s.tanggal_surat AS tanggal_surat, s.jenis_surat
+  FROM penduduk p
+  JOIN surat_keterangan_akta_kematian s ON s.nik = p.nik
+  WHERE UPPER(s.status_surat) = 'SELESAI' $whereTanggalSurat
+
+  UNION ALL
+  SELECT 
+    p.nik, p.no_kk, p.nama, p.tempat_lahir, p.tgl_lahir, p.jenis_kelamin, p.agama,
+    p.jalan, p.dusun, p.rt, p.rw, p.desa, p.kecamatan, p.kota,
+    p.pend_kk, p.pend_terakhir, p.pend_ditempuh, p.pekerjaan,
+    p.status_perkawinan, p.status_dlm_keluarga, p.kewarganegaraan,
+    p.nama_ayah, p.nama_ibu,
+    s.no_surat, s.tanggal_surat AS tanggal_surat, s.jenis_surat
+  FROM penduduk p
+  JOIN surat_keterangan_kepemilikan_kendaraan_bermotor s ON s.nik = p.nik
+  WHERE UPPER(s.status_surat) = 'SELESAI' $whereTanggalSurat
+
+  UNION ALL
+  SELECT 
+    p.nik, p.no_kk, p.nama, p.tempat_lahir, p.tgl_lahir, p.jenis_kelamin, p.agama,
+    p.jalan, p.dusun, p.rt, p.rw, p.desa, p.kecamatan, p.kota,
+    p.pend_kk, p.pend_terakhir, p.pend_ditempuh, p.pekerjaan,
+    p.status_perkawinan, p.status_dlm_keluarga, p.kewarganegaraan,
+    p.nama_ayah, p.nama_ibu,
+    s.no_surat, s.tanggal_surat AS tanggal_surat, s.jenis_surat
+  FROM penduduk p
+  JOIN surat_keterangan_perhiasan s ON s.nik = p.nik
+  WHERE UPPER(s.status_surat) = 'SELESAI' $whereTanggalSurat
+
+  UNION ALL
+  SELECT 
+    p.nik, p.no_kk, p.nama, p.tempat_lahir, p.tgl_lahir, p.jenis_kelamin, p.agama,
+    p.jalan, p.dusun, p.rt, p.rw, p.desa, p.kecamatan, p.kota,
+    p.pend_kk, p.pend_terakhir, p.pend_ditempuh, p.pekerjaan,
+    p.status_perkawinan, p.status_dlm_keluarga, p.kewarganegaraan,
+    p.nama_ayah, p.nama_ibu,
+    s.no_surat, s.tanggal_surat AS tanggal_surat, s.jenis_surat
+  FROM penduduk p
+  JOIN surat_pembetulan_akta_capil s ON s.nik = p.nik
+  WHERE UPPER(s.status_surat) = 'SELESAI' $whereTanggalSurat
+
+  UNION ALL
+  SELECT 
+    p.nik, p.no_kk, p.nama, p.tempat_lahir, p.tgl_lahir, p.jenis_kelamin, p.agama,
+    p.jalan, p.dusun, p.rt, p.rw, p.desa, p.kecamatan, p.kota,
+    p.pend_kk, p.pend_terakhir, p.pend_ditempuh, p.pekerjaan,
+    p.status_perkawinan, p.status_dlm_keluarga, p.kewarganegaraan,
+    p.nama_ayah, p.nama_ibu,
+    s.no_surat, s.tanggal_surat AS tanggal_surat, s.jenis_surat
+  FROM penduduk p
+  JOIN surat_pengajuan_akta_kelahiran s ON s.nik = p.nik
+  WHERE UPPER(s.status_surat) = 'SELESAI' $whereTanggalSurat
+
+  UNION ALL
+  SELECT 
+    p.nik, p.no_kk, p.nama, p.tempat_lahir, p.tgl_lahir, p.jenis_kelamin, p.agama,
+    p.jalan, p.dusun, p.rt, p.rw, p.desa, p.kecamatan, p.kota,
+    p.pend_kk, p.pend_terakhir, p.pend_ditempuh, p.pekerjaan,
+    p.status_perkawinan, p.status_dlm_keluarga, p.kewarganegaraan,
+    p.nama_ayah, p.nama_ibu,
+    s.no_surat, s.tanggal_surat AS tanggal_surat, s.jenis_surat
+  FROM penduduk p
+  JOIN surat_pendaftaran_pencetakan_kk_kelahiran s ON s.nik = p.nik
+  WHERE UPPER(s.status_surat) = 'SELESAI' $whereTanggalSurat
+
+  /* khusus ini: tanggal pakai created_at */
+  UNION ALL
+  SELECT 
+    p.nik, p.no_kk, p.nama, p.tempat_lahir, p.tgl_lahir, p.jenis_kelamin, p.agama,
+    p.jalan, p.dusun, p.rt, p.rw, p.desa, p.kecamatan, p.kota,
+    p.pend_kk, p.pend_terakhir, p.pend_ditempuh, p.pekerjaan,
+    p.status_perkawinan, p.status_dlm_keluarga, p.kewarganegaraan,
+    p.nama_ayah, p.nama_ibu,
+    s.no_surat, s.created_at AS tanggal_surat, s.jenis_surat
+  FROM penduduk p
+  JOIN surat_perubahan_nama_capil s ON s.nik = p.nik
+  WHERE UPPER(s.status_surat) = 'SELESAI' $whereCreatedAt
+
+  ORDER BY tanggal_surat DESC
+";
+?>
+<!DOCTYPE html>
 <html>
 <head>
+  <meta charset="utf-8">
   <link rel="shortcut icon" href="../../assets/img/mini-logo.png">
   <title>CETAK LAPORAN</title>
   <style>
-    @page {
-      margin: 2cm;
-      color: none;
-    }
-    body {
-      font-family: "Times New Roman", Times, serif;
-    }
-    hr{
-      border-bottom: 1px solid #000000;
-      height:0px;
-    }
+    @page { margin: 2cm; }
+    body { font-family: "Times New Roman", Times, serif; font-size: 12pt; }
+    hr { border-bottom: 1px solid #000; height:0px; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border:1px solid #000; padding:6px; vertical-align: top; }
+    th { text-align:center; }
+    .judul { text-align:center; font-size: 14pt; font-weight: bold; }
+    .subjudul { text-align:center; font-size: 12pt; font-weight: bold; margin-top:4px; }
+    .small { font-size: 10pt; }
   </style>
 </head>
 <body>
-  <?php
-    include "../../config/koneksi.php";
-    if(isset($_GET['filter']) && ! empty($_GET['filter'])){
-      $filter = $_GET['filter'];
-      if($filter == '1'){
-        echo '
-          <div class="header">
-            <div align="center" style="font-size: 14pt;"><b>Laporan Surat Administrasi Desa - Surat Keluar Desa Kedawong</b></div>
-            <hr>
-          </div><br>
-        ';
 
-        $query = "SELECT penduduk.nama, penduduk.dusun, penduduk.rt, penduduk.rw, surat_keterangan.no_surat, surat_keterangan.tanggal_surat, surat_keterangan.jenis_surat FROM penduduk LEFT JOIN surat_keterangan ON surat_keterangan.nik = penduduk.nik WHERE surat_keterangan.status_surat='selesai'
-          UNION SELECT penduduk.nama, penduduk.dusun, penduduk.rt, penduduk.rw, surat_keterangan_berkelakuan_baik.no_surat, surat_keterangan_berkelakuan_baik.tanggal_surat, surat_keterangan_berkelakuan_baik.jenis_surat FROM penduduk LEFT JOIN surat_keterangan_berkelakuan_baik ON surat_keterangan_berkelakuan_baik.nik = penduduk.nik WHERE surat_keterangan_berkelakuan_baik.status_surat='selesai' 
-          UNION SELECT penduduk.nama, penduduk.dusun, penduduk.rt, penduduk.rw, surat_keterangan_domisili.no_surat, surat_keterangan_domisili.tanggal_surat, surat_keterangan_domisili.jenis_surat FROM penduduk LEFT JOIN surat_keterangan_domisili ON surat_keterangan_domisili.nik = penduduk.nik WHERE surat_keterangan_domisili.status_surat='selesai' 
-          UNION SELECT penduduk.nama, penduduk.dusun, penduduk.rt, penduduk.rw, surat_keterangan_kepemilikan_kendaraan_bermotor.no_surat, surat_keterangan_kepemilikan_kendaraan_bermotor.tanggal_surat, surat_keterangan_kepemilikan_kendaraan_bermotor.jenis_surat FROM penduduk LEFT JOIN surat_keterangan_kepemilikan_kendaraan_bermotor ON surat_keterangan_kepemilikan_kendaraan_bermotor.nik = penduduk.nik WHERE surat_keterangan_kepemilikan_kendaraan_bermotor.status_surat='selesai'
-          UNION SELECT penduduk.nama, penduduk.dusun, penduduk.rt, penduduk.rw, surat_keterangan_perhiasan.no_surat, surat_keterangan_perhiasan.tanggal_surat, surat_keterangan_perhiasan.jenis_surat FROM penduduk LEFT JOIN surat_keterangan_perhiasan ON surat_keterangan_perhiasan.nik = penduduk.nik WHERE surat_keterangan_perhiasan.status_surat='selesai'
-          UNION SELECT penduduk.nama, penduduk.dusun, penduduk.rt, penduduk.rw, surat_keterangan_usaha.no_surat, surat_keterangan_usaha.tanggal_surat, surat_keterangan_usaha.jenis_surat FROM penduduk LEFT JOIN surat_keterangan_usaha ON surat_keterangan_usaha.nik = penduduk.nik WHERE surat_keterangan_usaha.status_surat='selesai' 
-          UNION SELECT penduduk.nama, penduduk.dusun, penduduk.rt, penduduk.rw, surat_lapor_hajatan.no_surat, surat_lapor_hajatan.tanggal_surat, surat_lapor_hajatan.jenis_surat FROM penduduk LEFT JOIN surat_lapor_hajatan ON surat_lapor_hajatan.nik = penduduk.nik WHERE surat_lapor_hajatan.status_surat='selesai'
-          UNION SELECT penduduk.nama, penduduk.dusun, penduduk.rt, penduduk.rw, surat_pengantar_skck.no_surat, surat_pengantar_skck.tanggal_surat, surat_pengantar_skck.jenis_surat FROM penduduk LEFT JOIN surat_pengantar_skck ON surat_pengantar_skck.nik = penduduk.nik WHERE surat_pengantar_skck.status_surat='selesai' ORDER BY tanggal_surat";
-      }else if($filter == '2'){
-        $tgl = date('d-m-y', strtotime($_GET['tanggal']));
-        echo '
-          <div class="header">
-            <div align="center" style="font-size: 12pt;"><b>Laporan Surat Administrasi Desa - Surat Keluar Desa Kedawong</b></div>
-            <div align="center" style="font-size: 12pt;"><b>Tanggal '.$tgl.'</b></div>
-            <hr>
-          </div><br>
-        ';
-        
-        $query = "SELECT penduduk.nama, penduduk.dusun, penduduk.rw, penduduk.rt, surat_keterangan.no_surat, surat_keterangan.tanggal_surat, surat_keterangan.jenis_surat FROM penduduk LEFT JOIN surat_keterangan ON surat_keterangan.nik = penduduk.nik WHERE surat_keterangan.status_surat='selesai' AND DATE(surat_keterangan.tanggal_surat)='{$_GET['tanggal']}'
-          UNION SELECT penduduk.nama, penduduk.dusun, penduduk.rw, penduduk.rt, surat_keterangan_berkelakuan_baik.no_surat, surat_keterangan_berkelakuan_baik.tanggal_surat, surat_keterangan_berkelakuan_baik.jenis_surat FROM penduduk LEFT JOIN surat_keterangan_berkelakuan_baik ON surat_keterangan_berkelakuan_baik.nik = penduduk.nik WHERE surat_keterangan_berkelakuan_baik.status_surat='selesai' AND DATE(surat_keterangan_berkelakuan_baik.tanggal_surat)='{$_GET['tanggal']}'
-          UNION SELECT penduduk.nama, penduduk.dusun, penduduk.rw, penduduk.rt, surat_keterangan_domisili.no_surat, surat_keterangan_domisili.tanggal_surat, surat_keterangan_domisili.jenis_surat FROM penduduk LEFT JOIN surat_keterangan_domisili ON surat_keterangan_domisili.nik = penduduk.nik WHERE surat_keterangan_domisili.status_surat='selesai' AND DATE(surat_keterangan_domisili.tanggal_surat)='{$_GET['tanggal']}'
-          UNION SELECT penduduk.nama, penduduk.dusun, penduduk.rw, penduduk.rt, surat_keterangan_kepemilikan_kendaraan_bermotor.no_surat, surat_keterangan_kepemilikan_kendaraan_bermotor.tanggal_surat, surat_keterangan_kepemilikan_kendaraan_bermotor.jenis_surat FROM penduduk LEFT JOIN surat_keterangan_kepemilikan_kendaraan_bermotor ON surat_keterangan_kepemilikan_kendaraan_bermotor.nik = penduduk.nik WHERE surat_keterangan_kepemilikan_kendaraan_bermotor.status_surat='selesai' AND DATE(surat_keterangan_kepemilikan_kendaraan_bermotor.tanggal_surat)='{$_GET['tanggal']}'
-          UNION SELECT penduduk.nama, penduduk.dusun, penduduk.rw, penduduk.rt, surat_keterangan_perhiasan.no_surat, surat_keterangan_perhiasan.tanggal_surat, surat_keterangan_perhiasan.jenis_surat FROM penduduk LEFT JOIN surat_keterangan_perhiasan ON surat_keterangan_perhiasan.nik = penduduk.nik WHERE surat_keterangan_perhiasan.status_surat='selesai' AND DATE(surat_keterangan_perhiasan.tanggal_surat)='{$_GET['tanggal']}'
-          UNION SELECT penduduk.nama, penduduk.dusun, penduduk.rw, penduduk.rt, surat_keterangan_usaha.no_surat, surat_keterangan_usaha.tanggal_surat, surat_keterangan_usaha.jenis_surat FROM penduduk LEFT JOIN surat_keterangan_usaha ON surat_keterangan_usaha.nik = penduduk.nik WHERE surat_keterangan_usaha.status_surat='selesai' AND DATE(surat_keterangan_usaha.tanggal_surat)='{$_GET['tanggal']}'
-          UNION SELECT penduduk.nama, penduduk.dusun, penduduk.rw, penduduk.rt, surat_lapor_hajatan.no_surat, surat_lapor_hajatan.tanggal_surat, surat_lapor_hajatan.jenis_surat FROM penduduk LEFT JOIN surat_lapor_hajatan ON surat_lapor_hajatan.nik = penduduk.nik WHERE surat_lapor_hajatan.status_surat='selesai' AND DATE(surat_lapor_hajatan.tanggal_surat)='{$_GET['tanggal']}'
-          UNION SELECT penduduk.nama, penduduk.dusun, penduduk.rw, penduduk.rt, surat_pengantar_skck.no_surat, surat_pengantar_skck.tanggal_surat, surat_pengantar_skck.jenis_surat FROM penduduk LEFT JOIN surat_pengantar_skck ON surat_pengantar_skck.nik = penduduk.nik WHERE surat_pengantar_skck.status_surat='selesai' AND DATE(surat_pengantar_skck.tanggal_surat)='{$_GET['tanggal']}' ORDER BY tanggal_surat";
-      }else if($filter == '3'){
-        $nama_bulan = array('', 'Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember');
-        echo '
-          <div class="header">
-            <div align="center" style="font-size: 12pt;"><b>Laporan Surat Administrasi Desa - Surat Keluar Desa Kedawong</b></div>
-            <div align="center" style="font-size: 12pt;"><b>Bulan '.$nama_bulan[$_GET['bulan']].' '.$_GET['tahun'].'</b></div>
-            <hr>
-          </div><br>
-        ';
-        
-        $query = "SELECT penduduk.nama, penduduk.dusun, penduduk.rw, penduduk.rt, surat_keterangan.no_surat, surat_keterangan.tanggal_surat, surat_keterangan.jenis_surat FROM penduduk LEFT JOIN surat_keterangan ON surat_keterangan.nik = penduduk.nik WHERE surat_keterangan.status_surat='selesai' AND MONTH(surat_keterangan.tanggal_surat)='{$_GET['bulan']}' AND YEAR(surat_keterangan.tanggal_surat)='{$_GET['tahun']}'
-          UNION SELECT penduduk.nama, penduduk.dusun, penduduk.rw, penduduk.rt, surat_keterangan_berkelakuan_baik.no_surat, surat_keterangan_berkelakuan_baik.tanggal_surat, surat_keterangan_berkelakuan_baik.jenis_surat FROM penduduk LEFT JOIN surat_keterangan_berkelakuan_baik ON surat_keterangan_berkelakuan_baik.nik = penduduk.nik WHERE surat_keterangan_berkelakuan_baik.status_surat='selesai' AND MONTH(surat_keterangan_berkelakuan_baik.tanggal_surat)='{$_GET['bulan']}' AND YEAR(surat_keterangan_berkelakuan_baik.tanggal_surat)='{$_GET['tahun']}'
-          UNION SELECT penduduk.nama, penduduk.dusun, penduduk.rw, penduduk.rt, surat_keterangan_domisili.no_surat, surat_keterangan_domisili.tanggal_surat, surat_keterangan_domisili.jenis_surat FROM penduduk LEFT JOIN surat_keterangan_domisili ON surat_keterangan_domisili.nik = penduduk.nik WHERE surat_keterangan_domisili.status_surat='selesai' AND MONTH(surat_keterangan_domisili.tanggal_surat)='{$_GET['bulan']}' AND YEAR(surat_keterangan_domisili.tanggal_surat)='{$_GET['tahun']}'
-          UNION SELECT penduduk.nama, penduduk.dusun, penduduk.rw, penduduk.rt, surat_keterangan_kepemilikan_kendaraan_bermotor.no_surat, surat_keterangan_kepemilikan_kendaraan_bermotor.tanggal_surat, surat_keterangan_kepemilikan_kendaraan_bermotor.jenis_surat FROM penduduk LEFT JOIN surat_keterangan_kepemilikan_kendaraan_bermotor ON surat_keterangan_kepemilikan_kendaraan_bermotor.nik = penduduk.nik WHERE surat_keterangan_kepemilikan_kendaraan_bermotor.status_surat='selesai' AND MONTH(surat_keterangan_kepemilikan_kendaraan_bermotor.tanggal_surat)='{$_GET['bulan']}' AND YEAR(surat_keterangan_kepemilikan_kendaraan_bermotor.tanggal_surat)='{$_GET['tahun']}'
-          UNION SELECT penduduk.nama, penduduk.dusun, penduduk.rw, penduduk.rt, surat_keterangan_perhiasan.no_surat, surat_keterangan_perhiasan.tanggal_surat, surat_keterangan_perhiasan.jenis_surat FROM penduduk LEFT JOIN surat_keterangan_perhiasan ON surat_keterangan_perhiasan.nik = penduduk.nik WHERE surat_keterangan_perhiasan.status_surat='selesai' AND MONTH(surat_keterangan_perhiasan.tanggal_surat)='{$_GET['bulan']}' AND YEAR(surat_keterangan_perhiasan.tanggal_surat)='{$_GET['tahun']}'
-          UNION SELECT penduduk.nama, penduduk.dusun, penduduk.rw, penduduk.rt, surat_keterangan_usaha.no_surat, surat_keterangan_usaha.tanggal_surat, surat_keterangan_usaha.jenis_surat FROM penduduk LEFT JOIN surat_keterangan_usaha ON surat_keterangan_usaha.nik = penduduk.nik WHERE surat_keterangan_usaha.status_surat='selesai' AND MONTH(surat_keterangan_usaha.tanggal_surat)='{$_GET['bulan']}' AND YEAR(surat_keterangan_usaha.tanggal_surat)='{$_GET['tahun']}'
-          UNION SELECT penduduk.nama, penduduk.dusun, penduduk.rw, penduduk.rt, surat_lapor_hajatan.no_surat, surat_lapor_hajatan.tanggal_surat, surat_lapor_hajatan.jenis_surat FROM penduduk LEFT JOIN surat_lapor_hajatan ON surat_lapor_hajatan.nik = penduduk.nik WHERE surat_lapor_hajatan.status_surat='selesai' AND MONTH(surat_lapor_hajatan.tanggal_surat)='{$_GET['bulan']}' AND YEAR(surat_lapor_hajatan.tanggal_surat)='{$_GET['tahun']}'
-          UNION SELECT penduduk.nama, penduduk.dusun, penduduk.rw, penduduk.rt, surat_pengantar_skck.no_surat, surat_pengantar_skck.tanggal_surat, surat_pengantar_skck.jenis_surat FROM penduduk LEFT JOIN surat_pengantar_skck ON surat_pengantar_skck.nik = penduduk.nik WHERE surat_pengantar_skck.status_surat='selesai' AND MONTH(surat_pengantar_skck.tanggal_surat)='{$_GET['bulan']}' AND YEAR(surat_pengantar_skck.tanggal_surat)='{$_GET['tahun']}' ORDER BY tanggal_surat";
-      }else if($filter == '4'){
-        echo '
-          <div class="header">
-            <div align="center" style="font-size: 12pt;"><b>Laporan Surat Administrasi Desa - Surat Keluar Desa Kedawong</b></div>
-            <div align="center" style="font-size: 12pt;"><b>Tahun '.$_GET['tahun'].'</b></div>
-            <hr>
-          </div><br>
-        ';
-       
-        $query = "SELECT penduduk.nama, penduduk.dusun, penduduk.rw, penduduk.rt, surat_keterangan.no_surat, surat_keterangan.tanggal_surat, surat_keterangan.jenis_surat FROM penduduk LEFT JOIN surat_keterangan ON surat_keterangan.nik = penduduk.nik WHERE surat_keterangan.status_surat='selesai' AND YEAR(surat_keterangan.tanggal_surat)='{$_GET['tahun']}'
-          UNION SELECT penduduk.nama, penduduk.dusun, penduduk.rw, penduduk.rt, surat_keterangan_berkelakuan_baik.no_surat, surat_keterangan_berkelakuan_baik.tanggal_surat, surat_keterangan_berkelakuan_baik.jenis_surat FROM penduduk LEFT JOIN surat_keterangan_berkelakuan_baik ON surat_keterangan_berkelakuan_baik.nik = penduduk.nik WHERE surat_keterangan_berkelakuan_baik.status_surat='selesai' AND YEAR(surat_keterangan_berkelakuan_baik.tanggal_surat)='{$_GET['tahun']}'
-          UNION SELECT penduduk.nama, penduduk.dusun, penduduk.rw, penduduk.rt, surat_keterangan_domisili.no_surat, surat_keterangan_domisili.tanggal_surat, surat_keterangan_domisili.jenis_surat FROM penduduk LEFT JOIN surat_keterangan_domisili ON surat_keterangan_domisili.nik = penduduk.nik WHERE surat_keterangan_domisili.status_surat='selesai' AND YEAR(surat_keterangan_domisili.tanggal_surat)='{$_GET['tahun']}'
-          UNION SELECT penduduk.nama, penduduk.dusun, penduduk.rw, penduduk.rt, surat_keterangan_kepemilikan_kendaraan_bermotor.no_surat, surat_keterangan_kepemilikan_kendaraan_bermotor.tanggal_surat, surat_keterangan_kepemilikan_kendaraan_bermotor.jenis_surat FROM penduduk LEFT JOIN surat_keterangan_kepemilikan_kendaraan_bermotor ON surat_keterangan_kepemilikan_kendaraan_bermotor.nik = penduduk.nik WHERE surat_keterangan_kepemilikan_kendaraan_bermotor.status_surat='selesai' AND YEAR(surat_keterangan_kepemilikan_kendaraan_bermotor.tanggal_surat)='{$_GET['tahun']}'
-          UNION SELECT penduduk.nama, penduduk.dusun, penduduk.rw, penduduk.rt, surat_keterangan_perhiasan.no_surat, surat_keterangan_perhiasan.tanggal_surat, surat_keterangan_perhiasan.jenis_surat FROM penduduk LEFT JOIN surat_keterangan_perhiasan ON surat_keterangan_perhiasan.nik = penduduk.nik WHERE surat_keterangan_perhiasan.status_surat='selesai' AND YEAR(surat_keterangan_perhiasan.tanggal_surat)='{$_GET['tahun']}'
-          UNION SELECT penduduk.nama, penduduk.dusun, penduduk.rw, penduduk.rt, surat_keterangan_usaha.no_surat, surat_keterangan_usaha.tanggal_surat, surat_keterangan_usaha.jenis_surat FROM penduduk LEFT JOIN surat_keterangan_usaha ON surat_keterangan_usaha.nik = penduduk.nik WHERE surat_keterangan_usaha.status_surat='selesai' AND YEAR(surat_keterangan_usaha.tanggal_surat)='{$_GET['tahun']}'
-          UNION SELECT penduduk.nama, penduduk.dusun, penduduk.rw, penduduk.rt, surat_lapor_hajatan.no_surat, surat_lapor_hajatan.tanggal_surat, surat_lapor_hajatan.jenis_surat FROM penduduk LEFT JOIN surat_lapor_hajatan ON surat_lapor_hajatan.nik = penduduk.nik WHERE surat_lapor_hajatan.status_surat='selesai' AND YEAR(surat_lapor_hajatan.tanggal_surat)='{$_GET['tahun']}'
-          UNION SELECT penduduk.nama, penduduk.dusun, penduduk.rw, penduduk.rt, surat_pengantar_skck.no_surat, surat_pengantar_skck.tanggal_surat, surat_pengantar_skck.jenis_surat FROM penduduk LEFT JOIN surat_pengantar_skck ON surat_pengantar_skck.nik = penduduk.nik WHERE surat_pengantar_skck.status_surat='selesai' AND YEAR(surat_pengantar_skck.tanggal_surat)='{$_GET['tahun']}' ORDER BY tanggal_surat";
-      }
-    }else{
-      echo '
-          <div class="header">
-            <div align="center" style="font-size: 12pt;"><b>Laporan Surat Administrasi Desa - Surat Keluar Desa Kedawong</b></div>
-            <hr>
-          </div><br>
-        ';
-      $query = "SELECT penduduk.nama, penduduk.dusun, penduduk.rt, penduduk.rw, surat_keterangan.no_surat, surat_keterangan.tanggal_surat, surat_keterangan.jenis_surat FROM penduduk LEFT JOIN surat_keterangan ON surat_keterangan.nik = penduduk.nik WHERE surat_keterangan.status_surat='selesai'
-        UNION SELECT penduduk.nama, penduduk.dusun, penduduk.rt, penduduk.rw, surat_keterangan_berkelakuan_baik.no_surat, surat_keterangan_berkelakuan_baik.tanggal_surat, surat_keterangan_berkelakuan_baik.jenis_surat FROM penduduk LEFT JOIN surat_keterangan_berkelakuan_baik ON surat_keterangan_berkelakuan_baik.nik = penduduk.nik WHERE surat_keterangan_berkelakuan_baik.status_surat='selesai' 
-        UNION SELECT penduduk.nama, penduduk.dusun, penduduk.rt, penduduk.rw, surat_keterangan_domisili.no_surat, surat_keterangan_domisili.tanggal_surat, surat_keterangan_domisili.jenis_surat FROM penduduk LEFT JOIN surat_keterangan_domisili ON surat_keterangan_domisili.nik = penduduk.nik WHERE surat_keterangan_domisili.status_surat='selesai' 
-        UNION SELECT penduduk.nama, penduduk.dusun, penduduk.rt, penduduk.rw, surat_keterangan_kepemilikan_kendaraan_bermotor.no_surat, surat_keterangan_kepemilikan_kendaraan_bermotor.tanggal_surat, surat_keterangan_kepemilikan_kendaraan_bermotor.jenis_surat FROM penduduk LEFT JOIN surat_keterangan_kepemilikan_kendaraan_bermotor ON surat_keterangan_kepemilikan_kendaraan_bermotor.nik = penduduk.nik WHERE surat_keterangan_kepemilikan_kendaraan_bermotor.status_surat='selesai'
-        UNION SELECT penduduk.nama, penduduk.dusun, penduduk.rt, penduduk.rw, surat_keterangan_perhiasan.no_surat, surat_keterangan_perhiasan.tanggal_surat, surat_keterangan_perhiasan.jenis_surat FROM penduduk LEFT JOIN surat_keterangan_perhiasan ON surat_keterangan_perhiasan.nik = penduduk.nik WHERE surat_keterangan_perhiasan.status_surat='selesai'
-        UNION SELECT penduduk.nama, penduduk.dusun, penduduk.rt, penduduk.rw, surat_keterangan_usaha.no_surat, surat_keterangan_usaha.tanggal_surat, surat_keterangan_usaha.jenis_surat FROM penduduk LEFT JOIN surat_keterangan_usaha ON surat_keterangan_usaha.nik = penduduk.nik WHERE surat_keterangan_usaha.status_surat='selesai' 
-        UNION SELECT penduduk.nama, penduduk.dusun, penduduk.rt, penduduk.rw, surat_lapor_hajatan.no_surat, surat_lapor_hajatan.tanggal_surat, surat_lapor_hajatan.jenis_surat FROM penduduk LEFT JOIN surat_lapor_hajatan ON surat_lapor_hajatan.nik = penduduk.nik WHERE surat_lapor_hajatan.status_surat='selesai'
-        UNION SELECT penduduk.nama, penduduk.dusun, penduduk.rt, penduduk.rw, surat_pengantar_skck.no_surat, surat_pengantar_skck.tanggal_surat, surat_pengantar_skck.jenis_surat FROM penduduk LEFT JOIN surat_pengantar_skck ON surat_pengantar_skck.nik = penduduk.nik WHERE surat_pengantar_skck.status_surat='selesai' ORDER BY tanggal_surat";
-    }
-  ?>
-  <table width="100%" border="1" cellpadding="5" style="border-collapse:collapse;">
-    <tr>
-      <th>No. Surat</th>
-      <th>Tanggal</th>
-      <th>Nama</th>
-      <th>Jenis Surat</th>
-      <th>Alamat</th>
-    </tr>
-    <?php
+  <div class="judul">Laporan Surat Administrasi Desa - Surat Keluar</div>
+  <?php if(!empty($judulTambahan)){ ?>
+    <div class="subjudul"><?php echo $judulTambahan; ?></div>
+  <?php } ?>
+  <hr><br>
+
+  <table>
+    <thead>
+      <tr>
+        <th>No</th>
+        <th>No. Surat</th>
+        <th>Tanggal Surat</th>
+        <th>Jenis Surat</th>
+        <th>NIK</th>
+        <th>No KK</th>
+        <th>Nama</th>
+        <th>Tempat/Tgl Lahir</th>
+        <th>JK</th>
+        <th>Agama</th>
+        <th>Jalan</th>
+        <th>Dusun</th>
+        <th>RT</th>
+        <th>RW</th>
+        <th>Desa</th>
+        <th>Kecamatan</th>
+        <th>Kota</th>
+        <th>Pend. KK</th>
+        <th>Pend. Terakhir</th>
+        <th>Pend. Ditempuh</th>
+        <th>Pekerjaan</th>
+        <th>Status Kawin</th>
+        <th>Status Keluarga</th>
+        <th>WN</th>
+        <th>Nama Ayah</th>
+        <th>Nama Ibu</th>
+      </tr>
+    </thead>
+    <tbody>
+      <?php
       $sql = mysqli_query($connect, $query);
-      $row = mysqli_num_rows($sql);
-      if($row > 0){
-        while($data = mysqli_fetch_assoc($sql)){
-          $tgl = date('d-m-Y', strtotime($data['tanggal_surat']));
-          echo "<tr>";
-          echo "<td>".$data['no_surat']."</td>";
-          echo "<td>".$tgl."</td>";
-          echo "<td>".$data['nama']."</td>";
-          echo "<td>".$data['jenis_surat']."</td>";
-          echo "<td>Dsn. ".$data['dusun'].", RT".$data['rt']."/RW".$data['rw']."</td>";
-          echo "</tr>";
+
+      if($sql === false){
+        echo "<tr><td colspan='26'>Query error: ".mysqli_error($connect)."</td></tr>";
+      } else {
+        $no = 1;
+        if(mysqli_num_rows($sql) > 0){
+          while($data = mysqli_fetch_array($sql)){
+
+            // TTL indo
+            $tglTTL = '-';
+            if(!empty($data['tgl_lahir'])){
+              $tanggal = date('d', strtotime($data['tgl_lahir']));
+              $bulan   = date('F', strtotime($data['tgl_lahir']));
+              $tahun   = date('Y', strtotime($data['tgl_lahir']));
+              $tglTTL  = $tanggal." ".$bulanIndo[$bulan]." ".$tahun;
+            }
+            $ttl = (!empty($data['tempat_lahir']) ? $data['tempat_lahir'] : '-') . ", " . $tglTTL;
+
+            // tanggal surat indo
+            $tglSuratIndo = '-';
+            if(!empty($data['tanggal_surat'])){
+              $tgl_s = date('d ', strtotime($data['tanggal_surat']));
+              $bln_s = date('F', strtotime($data['tanggal_surat']));
+              $thn_s = date(' Y', strtotime($data['tanggal_surat']));
+              $tglSuratIndo = $tgl_s.$bulanIndo[$bln_s].$thn_s;
+            }
+
+            echo "<tr>";
+            echo "<td style='text-align:center;'>".$no++."</td>";
+            echo "<td>".$data['no_surat']."</td>";
+            echo "<td>".$tglSuratIndo."</td>";
+            echo "<td>".$data['jenis_surat']."</td>";
+            echo "<td>".$data['nik']."</td>";
+            echo "<td>".$data['no_kk']."</td>";
+            echo "<td>".$data['nama']."</td>";
+            echo "<td>".$ttl."</td>";
+            echo "<td>".$data['jenis_kelamin']."</td>";
+            echo "<td>".$data['agama']."</td>";
+            echo "<td>".$data['jalan']."</td>";
+            echo "<td>".$data['dusun']."</td>";
+            echo "<td>".$data['rt']."</td>";
+            echo "<td>".$data['rw']."</td>";
+            echo "<td>".$data['desa']."</td>";
+            echo "<td>".$data['kecamatan']."</td>";
+            echo "<td>".$data['kota']."</td>";
+            echo "<td>".$data['pend_kk']."</td>";
+            echo "<td>".$data['pend_terakhir']."</td>";
+            echo "<td>".$data['pend_ditempuh']."</td>";
+            echo "<td>".$data['pekerjaan']."</td>";
+            echo "<td>".$data['status_perkawinan']."</td>";
+            echo "<td>".$data['status_dlm_keluarga']."</td>";
+            echo "<td>".$data['kewarganegaraan']."</td>";
+            echo "<td>".$data['nama_ayah']."</td>";
+            echo "<td>".$data['nama_ibu']."</td>";
+            echo "</tr>";
+          }
+        } else {
+          echo "<tr><td colspan='26' style='text-align:center;'>Data tidak ditemukan.</td></tr>";
         }
-      }else{
-        echo "<tr><td colspan='5'>Data tidak ditemukan.</td></tr>";
       }
-    ?>
+      ?>
+    </tbody>
   </table>
+
   <script>
     window.print();
   </script>
+
 </body>
 </html>
