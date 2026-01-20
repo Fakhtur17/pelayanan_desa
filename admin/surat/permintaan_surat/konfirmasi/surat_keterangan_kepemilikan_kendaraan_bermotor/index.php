@@ -3,10 +3,122 @@
   include ('../../../../../config/koneksi.php');
   include ('../part/header.php');
 
-  $id = $_GET['id'];
-  $qCek = mysqli_query($connect,"SELECT penduduk.*, surat_keterangan_kepemilikan_kendaraan_bermotor.* FROM penduduk LEFT JOIN surat_keterangan_kepemilikan_kendaraan_bermotor ON surat_keterangan_kepemilikan_kendaraan_bermotor.nik = penduduk.nik WHERE surat_keterangan_kepemilikan_kendaraan_bermotor.id_skkkb='$id'");
-  while($row = mysqli_fetch_array($qCek)){
+  if(!isset($_GET['id'])){
+    header("location:../../");
+    exit;
+  }
+
+  $id = mysqli_real_escape_string($connect, $_GET['id']);
+
+  $qCek = mysqli_query($connect,"
+    SELECT penduduk.*, surat_keterangan_kepemilikan_kendaraan_bermotor.*
+    FROM penduduk
+    LEFT JOIN surat_keterangan_kepemilikan_kendaraan_bermotor
+      ON surat_keterangan_kepemilikan_kendaraan_bermotor.nik = penduduk.nik
+    WHERE surat_keterangan_kepemilikan_kendaraan_bermotor.id_skkkb='$id'
+  ");
+
+  if(!$qCek || mysqli_num_rows($qCek) == 0){
+    echo "<div class='alert alert-danger'>Data surat tidak ditemukan.</div>";
+    include ('../part/footer.php');
+    exit;
+  }
+
+  // URL folder upload (public)
+  $baseUploadUrl = "../../../../../uploads/persyaratan_surat_kepemilikan_kendaraan_bermotor/";
+
+  // ✅ fungsi tampilan file-card (subfolder: ktp / kk)
+  function renderFileCard($label, $fileName, $baseUrl, $sub){
+    $safeLabel = htmlspecialchars($label, ENT_QUOTES, 'UTF-8');
+
+    echo '<div class="col-md-6" style="margin-bottom:14px;">';
+    echo '  <div class="file-card">';
+    echo '    <div class="file-card-head">';
+    echo '      <div class="file-title"><i class="fa fa-paperclip"></i> '.$safeLabel.'</div>';
+    echo '    </div>';
+
+    if(!empty($fileName)){
+      $safeFile = htmlspecialchars($fileName, ENT_QUOTES, 'UTF-8');
+      $url      = $baseUrl.$sub.'/'.$safeFile;
+
+      $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+      $isImg = in_array($ext, ['jpg','jpeg','png','gif','webp']);
+
+      echo '    <div class="file-card-body">';
+      echo '      <div class="file-meta">';
+      echo '        <span class="badge-ext">'.strtoupper($ext).'</span>';
+      echo '        <span class="file-name">'.$safeFile.'</span>';
+      echo '      </div>';
+
+      echo '      <div class="file-actions">';
+      echo '        <a class="btn btn-info btn-sm" href="'.$url.'" target="_blank" rel="noopener">';
+      echo '          <i class="fa fa-eye"></i> Lihat';
+      echo '        </a>';
+
+      // ✅ unduh aman via download.php + sub
+      echo '        <a class="btn btn-success btn-sm" href="download.php?sub='.urlencode($sub).'&file='.urlencode($fileName).'">';
+      echo '          <i class="fa fa-download"></i> Unduh';
+      echo '        </a>';
+      echo '      </div>';
+
+      if($isImg){
+        echo '      <div class="file-preview">';
+        echo '        <img src="'.$url.'" alt="'.$safeLabel.'">';
+        echo '      </div>';
+      } else {
+        echo '      <div class="file-note text-muted">';
+        echo '        <i class="fa fa-info-circle"></i> Preview hanya untuk gambar. Klik "Lihat" untuk membuka berkas.';
+        echo '      </div>';
+      }
+
+      echo '    </div>';
+    } else {
+      echo '    <div class="file-card-body">';
+      echo '      <div class="text-danger" style="font-weight:600;"><i class="fa fa-times"></i> Tidak ada berkas</div>';
+      echo '    </div>';
+    }
+
+    echo '  </div>';
+    echo '</div>';
+  }
 ?>
+
+<style>
+  .file-card{
+    border:1px solid #e5e7eb;
+    border-radius:12px;
+    background:#fff;
+    box-shadow:0 2px 10px rgba(0,0,0,.04);
+    overflow:hidden;
+    height:100%;
+  }
+  .file-card-head{
+    padding:10px 12px;
+    background:#f9fafb;
+    border-bottom:1px solid #e5e7eb;
+  }
+  .file-title{ font-weight:700; color:#111827; }
+  .file-card-body{ padding:12px; }
+  .file-meta{
+    display:flex; align-items:center; gap:10px; margin-bottom:10px;
+  }
+  .badge-ext{
+    display:inline-block; padding:3px 10px; border-radius:999px;
+    font-size:11px; border:1px solid #e5e7eb; background:#fff;
+    color:#374151; font-weight:700;
+  }
+  .file-name{ font-size:12px; color:#6b7280; word-break:break-all; }
+  .file-actions{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+  .file-preview{
+    border:1px solid #e5e7eb; border-radius:10px; overflow:hidden; background:#f3f4f6;
+  }
+  .file-preview img{
+    max-width:100%; max-height:260px; object-fit:contain; display:block; margin:auto;
+  }
+  .file-note{ font-size:12px; }
+</style>
+
+<?php while($row = mysqli_fetch_array($qCek)){ ?>
 
 <aside class="main-sidebar">
   <section class="sidebar">
@@ -62,6 +174,7 @@
     </ul>
   </section>
 </aside>
+
 <div class="content-wrapper">
   <section class="content-header">
     <h1>&nbsp;</h1>
@@ -70,6 +183,7 @@
       <li class="active">Permintaan Surat</li>
     </ol>
   </section>
+
   <section class="content">      
     <div class="row">
       <div class="col-md-12">
@@ -81,6 +195,7 @@
               <button type="button" class="btn btn-box-tool" data-widget="remove"><i class="fa fa-remove"></i></button>
             </div>
           </div>
+
           <div class="box-body">
             <form class="form-horizontal" method="post" action="update-konfirmasi.php">
               <div class="row">
@@ -103,7 +218,6 @@
                               }else{
                           ?>
                           <option value="<?php echo $rows['id_pejabat_desa']; ?>"><?php echo $rows['jabatan'], " (", $rows['nama_pejabat_desa'], ")"; ?></option>
-
                           <?php 
                               } 
                             }
@@ -113,6 +227,7 @@
                     </div>
                   </div>
                 </div>
+
                 <div class="col-md-6">
                   <div class="box-body">
                     <div class="form-group">
@@ -124,8 +239,12 @@
                   </div>
                 </div>
               </div>
-              <h5 class="box-title pull-right" style="color: #696969;"><i class="fas fa-info-circle"></i> <b>Informasi Penduduk</b></h5>
+
+              <h5 class="box-title pull-right" style="color: #696969;">
+                <i class="fas fa-info-circle"></i> <b>Informasi Penduduk</b>
+              </h5>
               <br><hr style="border-bottom: 1px solid #DCDCDC;">
+
               <div class="row">
                 <div class="col-md-6">
                   <div class="box-body">
@@ -135,38 +254,32 @@
                         <input type="text" name="fnama" style="text-transform: uppercase;" value="<?php echo $row['nama']; ?>" class="form-control" readonly>
                       </div>
                     </div>
+
                     <?php
                       $tgl_lhr = date($row['tgl_lahir']);
                       $tgl = date('d ', strtotime($tgl_lhr));
                       $bln = date('F', strtotime($tgl_lhr));
                       $thn = date(' Y', strtotime($tgl_lhr));
                       $blnIndo = array(
-                          'January' => 'Januari',
-                          'February' => 'Februari',
-                          'March' => 'Maret',
-                          'April' => 'April',
-                          'May' => 'Mei',
-                          'June' => 'Juni',
-                          'July' => 'Juli',
-                          'August' => 'Agustus',
-                          'September' => 'September',
-                          'October' => 'Oktober',
-                          'November' => 'November',
-                          'December' => 'Desember'
+                        'January' => 'Januari','February' => 'Februari','March' => 'Maret','April' => 'April','May' => 'Mei','June' => 'Juni',
+                        'July' => 'Juli','August' => 'Agustus','September' => 'September','October' => 'Oktober','November' => 'November','December' => 'Desember'
                       );
                     ?>
+
                     <div class="form-group">
                       <label class="col-sm-3 control-label">Tempat, Tgl Lahir</label>
                       <div class="col-sm-9">
                         <input type="text" name="ft_lahir" style="text-transform: capitalize;" value="<?php echo $row['tempat_lahir'] . ", " . $tgl . $blnIndo[$bln] . $thn; ?>" class="form-control" readonly>
                       </div>
                     </div>
+
                     <div class="form-group">
                       <label class="col-sm-3 control-label">Pekerjaan</label>
                       <div class="col-sm-9">
                         <input type="text" name="fpekerjaan" style="text-transform: capitalize;" value="<?php echo $row['pekerjaan']; ?>" class="form-control" readonly>
                       </div>
                     </div>
+
                     <div class="form-group">
                       <label class="col-sm-3 control-label">Alamat</label>
                       <div class="col-sm-9">
@@ -175,6 +288,7 @@
                     </div>
                   </div>
                 </div>
+
                 <div class="col-md-6">
                   <div class="box-body">
                     <div class="form-group">
@@ -183,18 +297,21 @@
                         <input type="text" name="fj_kelamin" value="<?php echo $row['jenis_kelamin']; ?>" class="form-control" readonly>
                       </div>
                     </div>
+
                     <div class="form-group">
                       <label class="col-sm-3 control-label">Agama</label>
                       <div class="col-sm-9">
                         <input type="text" name="fagama" style="text-transform: capitalize;" value="<?php echo $row['agama']; ?>" class="form-control" readonly>
                       </div>
                     </div>
+
                     <div class="form-group">
                       <label class="col-sm-3 control-label">NIK</label>
                       <div class="col-sm-9">
                         <input type="text" name="fnik" value="<?php echo $row['nik']; ?>" class="form-control" readonly>
                       </div>
                     </div>
+
                     <div class="form-group">
                       <label class="col-sm-3 control-label">Kewarganegaraan</label>
                       <div class="col-sm-9">
@@ -204,8 +321,12 @@
                   </div>
                 </div>
               </div>
-              <h5 class="box-title pull-right" style="color: #696969;"><i class="fas fa-info-circle"></i> <b>Informasi Kendaraan</b></h5>
+
+              <h5 class="box-title pull-right" style="color: #696969;">
+                <i class="fas fa-info-circle"></i> <b>Informasi Kendaraan</b>
+              </h5>
               <br><hr style="border-bottom: 1px solid #DCDCDC;">
+
               <div class="row">
                 <div class="col-md-6">
                   <div class="box-body">
@@ -215,24 +336,28 @@
                         <input type="text" name="fmerk_type" style="text-transform: uppercase;" value="<?php echo $row['merk_type']; ?>" class="form-control" readonly>
                       </div>
                     </div>
+
                     <div class="form-group">
                       <label class="col-sm-3 control-label">Tahun Pembuatan / CC</label>
                       <div class="col-sm-9">
                         <input type="text" name="ftahun_pembuatan_cc" style="text-transform: capitalize;" value="<?php echo $row['tahun_pembuatan'] . " / " . $row['cc']; ?>" class="form-control" readonly>
                       </div>
                     </div>
+
                     <div class="form-group">
                       <label class="col-sm-3 control-label">No. Rangka</label>
                       <div class="col-sm-9">
                         <input type="text" name="fno_rangka" style="text-transform: uppercase;" value="<?php echo $row['no_rangka']; ?>" class="form-control" readonly>
                       </div>
                     </div>
+
                     <div class="form-group">
                       <label class="col-sm-3 control-label">No. Polisi</label>
                       <div class="col-sm-9">
                         <input type="text" name="fno_polisi" style="text-transform: uppercase;" value="<?php echo $row['no_polisi']; ?>" class="form-control" readonly>
                       </div>
                     </div>
+
                     <div class="form-group">
                       <label class="col-sm-3 control-label">Atas Nama Pemilik</label>
                       <div class="col-sm-9">
@@ -241,6 +366,7 @@
                     </div>
                   </div>
                 </div>
+
                 <div class="col-md-6">
                   <div class="box-body">
                     <div class="form-group">
@@ -249,24 +375,28 @@
                         <input type="text" name="fjenis_model" style="text-transform: uppercase;" value="<?php echo $row['jenis_model']; ?>" class="form-control" readonly>
                       </div>
                     </div>
+
                     <div class="form-group">
                       <label class="col-sm-3 control-label">Warna Cat</label>
                       <div class="col-sm-9">
                         <input type="text" name="fwarna_cat" style="text-transform: uppercase;" value="<?php echo $row['warna_cat']; ?>" class="form-control" readonly>
                       </div>
                     </div>
+
                     <div class="form-group">
                       <label class="col-sm-3 control-label">No. Mesin</label>
                       <div class="col-sm-9">
                         <input type="text" name="fno_mesin" style="text-transform: uppercase;" value="<?php echo $row['no_mesin']; ?>" class="form-control" readonly>
                       </div>
                     </div>
+
                     <div class="form-group">
                       <label class="col-sm-3 control-label">No. B P K B</label>
                       <div class="col-sm-9">
                         <input type="text" name="fno_bpkb" style="text-transform: uppercase;" value="<?php echo $row['no_bpkb']; ?>" class="form-control" readonly>
                       </div>
                     </div>
+
                     <div class="form-group">
                       <label class="col-sm-3 control-label">Alamat Pemilik</label>
                       <div class="col-sm-9">
@@ -276,8 +406,12 @@
                   </div>
                 </div>
               </div>
-              <h5 class="box-title pull-right" style="color: #696969;"><i class="fas fa-info-circle"></i> <b>Informasi Surat</b></h5>
+
+              <h5 class="box-title pull-right" style="color: #696969;">
+                <i class="fas fa-info-circle"></i> <b>Informasi Surat</b>
+              </h5>
               <br><hr style="border-bottom: 1px solid #DCDCDC;">
+
               <div class="row">
                 <div class="col-md-6">
                   <div class="box-body">
@@ -287,29 +421,44 @@
                         <input type="text" name="fkeperluan" style="text-transform: capitalize;" value="<?php echo $row['keperluan']; ?>" class="form-control" readonly>
                       </div>
                     </div>
+
                     <div>
                       <input type="hidden" name="id" value="<?php echo $row['id_skkkb']; ?>" class="form-control">
                     </div>
                   </div>
                 </div>
+
                 <div class="col-md-6">
                   <div class="box-body pull-right">
                     <input type="submit" name="submit" class="btn btn-success" value="Konfirmasi">
+                    <a href="../../" class="btn btn-default">Kembali</a>
                   </div>
                 </div>
               </div>
+
+              <!-- ✅ TAMBAHAN: PERSYARATAN KTP & KK -->
+              <h5 class="box-title pull-right" style="color: #696969;">
+                <i class="fas fa-paperclip"></i> <b>Persyaratan Berkas</b>
+              </h5>
+              <br><hr style="border-bottom: 1px solid #DCDCDC;">
+
+              <div class="row">
+                <?php
+                  // kolom DB: ktp_pemilik, kk_pemilik
+                  renderFileCard("KTP Pemilik", $row['ktp_pemilik'], $baseUploadUrl, "ktp");
+                  renderFileCard("KK Pemilik",  $row['kk_pemilik'],  $baseUploadUrl, "kk");
+                ?>
+              </div>
+              <!-- ✅ END TAMBAHAN -->
+
             </form>
           </div>
-          <div class="box-footer">
-          </div>
+
+          <div class="box-footer"></div>
         </div>
       </div>
     </div>
   </section>
 </div>
 
-<?php
-  }
-
-  include ('../part/footer.php');
-?>
+<?php } include ('../part/footer.php'); ?>
